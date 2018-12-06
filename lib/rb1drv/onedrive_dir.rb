@@ -6,7 +6,7 @@ module Rb1drv
     attr_reader :child_count
     def initialize(od, api_hash)
       super
-      @child_count = api_hash.dig('folder', 'childCount')
+      @child_count = api_hash.fetch('folder', {})['childCount']
       @cached_gets = {}
     end
 
@@ -120,10 +120,11 @@ module Rb1drv
             conn = Excon.new(resume_session['session_url'], idempotent: true)
             loop do
               result = JSON.parse(conn.get.body)
-              break unless result.dig('error', 'code') == 'accessDenied'
+              break unless result.fetch('error', {})['code'] == 'accessDenied'
               sleep 5
             end
-            resume_position = result.dig('nextExpectedRanges', 0)&.split('-')&.first&.to_i or resume_session = nil
+            next_range = result.fetch('nextExpectedRanges', [])[0]
+            resume_position = next_range ? next_range.split('-').first.to_i : nil
           end
 
           resume_position ||= 0
@@ -176,10 +177,10 @@ module Rb1drv
               end
               throw :restart if result.body.include?('</html>')
               result = JSON.parse(result.body)
-              new_file = OneDriveFile.new(@od, result) if result.dig('file')
+              new_file = OneDriveFile.new(@od, result) if result['file']
             end
           end
-          throw :restart unless new_file&.file?
+          throw :restart unless new_file && new_file.file?
           break
         end
         # catch :restart here

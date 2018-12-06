@@ -3,7 +3,7 @@ module Rb1drv
     attr_reader :download_url
     def initialize(od, api_hash)
       super
-      @download_url = api_hash.dig('@microsoft.graph.downloadUrl')
+      @download_url = api_hash['@microsoft.graph.downloadUrl']
     end
 
     # No

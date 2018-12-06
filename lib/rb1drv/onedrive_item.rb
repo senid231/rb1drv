@@ -7,13 +7,13 @@ module Rb1drv
       %w(id name eTag size).each do |key|
         instance_variable_set("@#{key}", api_hash[key])
       end
-      @remote_drive_id = api_hash.dig('remoteItem', 'parentReference', 'driveId')
-      @remote_id = api_hash.dig('remoteItem', 'id')
-      @mtime = Time.iso8601(api_hash.dig('lastModifiedDateTime'))
-      @ctime = Time.iso8601(api_hash.dig('createdDateTime'))
-      @muser = api_hash.dig('lastModifiedBy', 'user', 'displayName') || 'N/A'
-      @cuser = api_hash.dig('createdBy', 'user', 'displayName') || 'N/A'
-      @parent_path = api_hash.dig('parentReference', 'path')
+      @remote_drive_id = api_hash.fetch('remoteItem', {}).fetch('parentReference', {})['driveId']
+      @remote_id = api_hash.fetch('remoteItem', {})['id']
+      @mtime = Time.iso8601(api_hash.fetch('lastModifiedDateTime'))
+      @ctime = Time.iso8601(api_hash.fetch('createdDateTime'))
+      @muser = api_hash.fetch('lastModifiedBy', {}).fetch('user', {})['displayName'] || 'N/A'
+      @cuser = api_hash.fetch('createdBy', {}).fetch('user', {})['displayName'] || 'N/A'
+      @parent_path = api_hash.fetch('parentReference', {})['path']
       @remote = api_hash.has_key?('remoteItem')
     end
 
@@ -30,7 +30,7 @@ module Rb1drv
         OneDriveFile.new(od, item_hash)
       elsif item_hash['folder']
         OneDriveDir.new(od, item_hash)
-      elsif item_hash.dig('error', 'code') == 'itemNotFound'
+      elsif item_hash.fetch('error', {})['code'] == 'itemNotFound'
         OneDrive404.new
       else
         item_hash
